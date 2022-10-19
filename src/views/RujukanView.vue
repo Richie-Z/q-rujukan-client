@@ -63,6 +63,12 @@
           </div>
         </div>
       </div>
+      <router-link
+        :to="{ name: 'home' }"
+        class="absolute bottom-[2%] bg-none left-10 p-5 z-50"
+      >
+        &nbsp;
+      </router-link>
       <v-img src="@/assets/images/footer.png" alt=""></v-img>
     </div>
   </div>
