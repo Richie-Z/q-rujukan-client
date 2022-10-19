@@ -1,10 +1,10 @@
 <template>
   <div class="">
     <div
-      class="absolute z-10 left-[81%] lg:left-[17.5rem] top-[32.8%] lg:top-[13rem] bg-white"
+      class="absolute z-10 left-[81%] lg:left-[17.5rem] top-[32%] lg:top-[13rem] bg-white"
     >
       <router-link :to="{ name: 'about' }">
-        <button class="bg-[#DBF7EB] text-black rounded-full px-4 py-4">
+        <button class="bg-[#DBF7EB] text-black rounded-full px-5 py-5">
           <v-icon icon="mdi-qrcode"></v-icon>
         </button>
       </router-link>
