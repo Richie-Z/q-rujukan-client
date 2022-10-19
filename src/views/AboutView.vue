@@ -13,6 +13,7 @@
           <div class="w-[90%] flex">
             <input
               type="text"
+              v-model="searchValue"
               class="rounded-full shadow-lg w-[95%] lg:w-full px-5 py-2"
               placeholder="Search Rujukan..."
             />
@@ -74,7 +75,14 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from "vue";
+import Fuse from "fuse.js";
+import { ref, watch, computed, Ref } from "vue";
+interface Data {
+  rumahSakit: { name: string };
+  status: boolean;
+  doktor: { name: string; spesialis: string };
+}
+
 let isFilterActive = ref(false);
 const openCloseFilter = () => {
   isFilterActive.value = !isFilterActive.value;
@@ -96,7 +104,7 @@ const items = ref([
   },
 ]);
 
-const data = ref([
+const ogData: Ref<Data[]> = ref([
   {
     rumahSakit: { name: "Rumah Sakit Panti Nugroho" },
     status: true,
@@ -116,4 +124,41 @@ const data = ref([
     doktor: { name: "dr.Immanuel Richie, Sp.THT", spesialis: "THT" },
   },
 ]);
+let searchData: Ref<Data[]> | Ref<null> = ref(null);
+const data = computed({
+  get() {
+    if (searchData.value === null) {
+      return ogData.value;
+    }
+    return searchData.value;
+  },
+  set(newValue: Data[]) {
+    searchData.value = newValue;
+  },
+});
+const searchValue = ref("");
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+watch(searchValue, async (newSearch: string, oldSearch: string) => {
+  if (newSearch === "") {
+    data.value = ogData.value;
+    return;
+  }
+  try {
+    const options = {
+      threshold: 0.3,
+      keys: ["doktor.name", "doktor.spesialis", "rumahSakit.name"],
+    };
+    const fuse = new Fuse(ogData.value, options);
+
+    const result = fuse.search(newSearch);
+    console.log(result);
+    data.value = result.map(({ item }) => ({
+      rumahSakit: { name: item.rumahSakit.name },
+      status: item.status,
+      doktor: { name: item.doktor.name, spesialis: item.doktor.spesialis },
+    }));
+  } catch (error) {
+    console.error(error);
+  }
+});
 </script>
