@@ -40,17 +40,19 @@
             label="Tanggal Awal"
             type="date"
             variant="outlined"
+            v-model="tglAwal"
             class=""
           ></v-text-field>
           <v-text-field
             label="Tanggal Akhir"
             variant="outlined"
+            v-model="tglAkhir"
             type="date"
           ></v-text-field>
         </div>
 
         <div v-for="(d, index) in data" :key="index">
-          <router-link :to="{ name: 'rujukan', params: { rujukan: index } }">
+          <router-link :to="{ name: 'rujukan', params: { rujukan: d.id } }">
             <v-card width="100%" class="my-7 !bg-[#D7F3E7] rounded-lg">
               <template #title
                 ><p class="text-2xl">{{ d.rumahSakit.name }}</p>
@@ -82,10 +84,13 @@
 
 <script lang="ts" setup>
 import Fuse from "fuse.js";
-import { ref, watch, computed, Ref } from "vue";
+import { ref, watch, computed, Ref, WritableComputedRef } from "vue";
+import axios from "axios";
 interface Data {
-  rumahSakit: { name: string };
+  id: number;
+  tgl: string;
   status: boolean;
+  rumahSakit: { name: string };
   doktor: { name: string; spesialis: string };
 }
 
@@ -94,7 +99,7 @@ const openCloseFilter = () => {
   isFilterActive.value = !isFilterActive.value;
 };
 
-const closeFilterBx = () => {
+const closeFilterBx = async () => {
   isFilterActive.value = false;
 };
 const items = ref([
@@ -110,28 +115,22 @@ const items = ref([
   },
 ]);
 
-const ogData: Ref<Data[]> = ref([
-  {
-    rumahSakit: { name: "Rumah Sakit Panti Nugroho" },
-    status: true,
-    doktor: { name: "dr.Valentino Sas Henry, Sp.THT", spesialis: "THT" },
-  },
-  {
-    rumahSakit: { name: "Rumah Sakit Panti Rapih" },
-    status: false,
-    doktor: {
-      name: "dr.Sumitta Nauli, Sp.OT",
-      spesialis: "Orthopedi dan Traumatologi",
-    },
-  },
-  {
-    rumahSakit: { name: "Rumah Sakit Panti Rapih" },
-    status: false,
-    doktor: { name: "dr.Immanuel Richie, Sp.THT", spesialis: "THT" },
-  },
-]);
+const ogData: Ref = ref();
+
+(async () => {
+  try {
+    ogData.value = await axios
+      .get("http://127.0.0.1:4000/get_all_rujukan")
+      .then(function (res) {
+        return res.data;
+      });
+  } catch (error) {
+    console.error(error);
+  }
+})();
+
 let searchData: Ref<Data[]> | Ref<null> = ref(null);
-const data = computed({
+const data: WritableComputedRef<Data[]> = computed({
   get() {
     if (searchData.value === null) {
       return ogData.value;
@@ -142,9 +141,13 @@ const data = computed({
     searchData.value = newValue;
   },
 });
+
 const searchValue = ref("");
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-watch(searchValue, async (newSearch: string, oldSearch: string) => {
+const tglAwal = ref("");
+const tglAkhir = ref("");
+watch(searchValue, (newSearch: string) => {
+  tglAwal.value = "";
+  tglAkhir.value = "";
   if (newSearch === "") {
     data.value = ogData.value;
     return;
@@ -159,12 +162,34 @@ watch(searchValue, async (newSearch: string, oldSearch: string) => {
     const result = fuse.search(newSearch);
     console.log(result);
     data.value = result.map(({ item }) => ({
+      id: item.id,
+      tgl: item.tgl,
       rumahSakit: { name: item.rumahSakit.name },
       status: item.status,
       doktor: { name: item.doktor.name, spesialis: item.doktor.spesialis },
     }));
   } catch (error) {
     console.error(error);
+  }
+});
+
+const updateData = async () => {
+  data.value = ogData.value.filter((item) => {
+    let tgl = new Date(item.tgl).getTime();
+    return (
+      tgl >= new Date(tglAwal.value).getTime() &&
+      tgl <= new Date(tglAkhir.value).getTime()
+    );
+  });
+};
+watch(tglAkhir, async () => {
+  if (tglAwal.value !== "") {
+    await updateData();
+  }
+});
+watch(tglAwal, async () => {
+  if (tglAkhir.value !== "") {
+    await updateData();
   }
 });
 </script>
