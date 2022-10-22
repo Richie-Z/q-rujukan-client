@@ -63,7 +63,7 @@
               <template #text
                 ><div class="flex justify-between">
                   <p>{{ d.doktor.name }}</p>
-                  <span v-if="d.status" class="text-green-500">Aktif</span>
+                  <span v-if="d.status == 1" class="text-green-500">Aktif</span>
                   <span v-else class="text-red-500">Tidak Aktif</span>
                 </div>
               </template>
@@ -89,7 +89,7 @@ import axios from "axios";
 interface Data {
   id: number;
   tgl: string;
-  status: boolean;
+  status: number;
   rumahSakit: { name: string };
   doktor: { name: string; spesialis: string };
 }
